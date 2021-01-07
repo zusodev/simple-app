@@ -1,0 +1,24 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  NGINX_HOST_HTTP_PORT: 8088
+
+stages:
+  - test
+  - deploy
+
+before_script:
+  - cp laradock/env-example laradock/.env
+  - docker-compose --env-file laradock/.env -f laradock/docker-compose.yml rm -sf workspace
+  - docker-compose --env-file laradock/.env -f laradock/docker-compose.yml up -d nginx mysql workspace
+
+test:
+  stage: test
+  script:
+    - docker-compose --env-file laradock/.env -f laradock/docker-compose.yml exec -T --user=laradock workspace bash test-script.sh
+  after_script:
+    - docker-compose --env-file laradock/.env -f laradock/docker-compose.yml down
+    
+deploy:
+  stage: deploy
+  script:
+    - docker-compose --env-file laradock/.env -f laradock/docker-compose.yml exec -T --user=laradock workspace bash deploy-script.sh
